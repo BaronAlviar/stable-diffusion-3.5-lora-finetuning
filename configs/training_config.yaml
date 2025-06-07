@@ -1,0 +1,70 @@
+# -----------------------------------------------------------------------------
+# Configuration for Stable Diffusion 3 LoRA Fine-Tuning
+# -----------------------------------------------------------------------------
+
+# --- Model and Paths ---
+model:
+  id: "stabilityai/stable-diffusion-3.5-medium" # Base model from Hugging Face Hub
+  # Alternative models:
+  # id: "stabilityai/stable-diffusion-3.5-large"
+  use_quantization: true # Use 4-bit quantization for memory saving
+
+paths:
+  output_dir: "/content/sd3_lora_output" # Root directory for all outputs
+  dataset_path: "/content/MyImgDataset" # Path to the dataset with 'images' subdir and 'metadata.jsonl'
+  
+# --- Training Hyperparameters ---
+training:
+  num_epochs: 20
+  batch_size: 1
+  gradient_accumulation_steps: 4
+  max_grad_norm: 1.0
+  seed: 42
+  mixed_precision: "bf16" # "no", "fp16", "bf16"
+
+# --- Optimizer Settings (AdamW8bit) ---
+optimizer:
+  transformer_lr: 5.0e-6
+  text_encoder_lr: 2.5e-6
+  text_encoder_t5_lr: 5.0e-7
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_weight_decay: 1.0e-2
+  adam_epsilon: 1.0e-8
+
+# --- Learning Rate Scheduler ---
+lr_scheduler:
+  type: "cosine" # "linear", "cosine", "constant", etc.
+  warmup_steps_ratio: 0.1 # Percentage of total steps for warmup
+
+# --- LoRA Configuration ---
+lora:
+  rank: 32
+  alpha: 64
+  dropout: 0.1
+
+# --- Data and Tokenizer Settings ---
+data:
+  resolution: 384
+  tokenizer_max_length: 77
+  tokenizer_t5_max_length: 224
+
+# --- Rectified Flow (RF) Loss Settings ---
+rectified_flow:
+  num_train_timesteps: 1000
+  loss_weight_clamp: 1.0 
+
+# --- Logging and Saving ---
+logging:
+  log_steps: 10
+  save_steps: 50 # Save a checkpoint every N global steps
+  project_name: "sd3_lora_finetuning_rf"
+
+# --- Validation / Test Inference during Training ---
+validation:
+  run_during_training: false
+  prompt: "Ghibli-style a tiny astronaut hatching from an egg on the moon"
+  negative_prompt: "low quality, blurry, watermark, signature, ugly, deformed, bad anatomy, extra limbs, disfigured"
+  steps: 28
+  guidance_scale: 7.0
+  resolution: 384

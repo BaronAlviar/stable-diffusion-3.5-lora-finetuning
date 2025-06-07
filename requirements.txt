@@ -1,0 +1,11 @@
+accelerate
+bitsandbytes
+diffusers
+transformers
+torch
+peft
+numpy
+Pillow
+tqdm
+PyYAML
+datasets # For downloading the example dataset
