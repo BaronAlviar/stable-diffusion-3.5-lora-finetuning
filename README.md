@@ -43,8 +43,8 @@ This framework provides a **complete solution** for customizing Stable Diffusion
 ## 📋 Requirements
 
 ### Hardware Requirements
-- **Minimum**: NVIDIA GPU with 15GB VRAM
-- **Recommended**: NVIDIA GPU with 16GB+ VRAM
+- **Minimum**: GPU with 15GB VRAM (Google Colab)
+- **Recommended**: GPU with 16GB+ VRAM
 - **Cloud Options**: Google Colab, Paperspace, RunPod, or AWS/GCP instances
 
 ### Software Requirements
