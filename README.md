@@ -1,4 +1,4 @@
-# 🎨 Stable Diffusion 3 LoRA Fine-Tuning Framework
+# 🎨 Stable Diffusion 3.5 LoRA Fine-Tuning Framework
 
 A comprehensive, modular framework for fine-tuning Stable Diffusion 3.5 models using Low-Rank Adaptation (LoRA). This repository enables you to create custom AI image generators tailored to your specific artistic style, objects, or concepts.
 
@@ -43,9 +43,9 @@ This framework provides a **complete solution** for customizing Stable Diffusion
 ## 📋 Requirements
 
 ### Hardware Requirements
-- **Minimum**: NVIDIA GPU with 12GB VRAM (RTX 3060 12GB, RTX 4060 Ti)
-- **Recommended**: NVIDIA GPU with 16GB+ VRAM (RTX 4070 Ti, RTX 4080, RTX 4090)
-- **Cloud Options**: Google Colab Pro, Paperspace, RunPod, or AWS/GCP instances
+- **Minimum**: NVIDIA GPU with 15GB VRAM
+- **Recommended**: NVIDIA GPU with 16GB+ VRAM
+- **Cloud Options**: Google Colab, Paperspace, RunPod, or AWS/GCP instances
 
 ### Software Requirements
 - Python 3.8+
@@ -56,8 +56,8 @@ This framework provides a **complete solution** for customizing Stable Diffusion
 
 ### Step 1: Clone the Repository
 ```bash
-git clone https://github.com/your-username/sd3-lora-finetuning.git
-cd sd3-lora-finetuning
+git clone https://github.com/gokhaneraslan/stable-diffusion-3.5-lora-finetuning.git
+cd stable-diffusion-3.5-lora-finetuning
 ```
 
 ### Step 2: Create Virtual Environment
@@ -77,32 +77,75 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### Step 4: Configure Accelerate (CRUCIAL)
+### Step 4: Configure Accelerator (Crucial Step)
+
+The training script relies on Hugging Face `accelerate`. To ensure it uses the correct settings (like mixed precision), you need to configure it once per machine.
+
+Run the following command in your terminal:
 ```bash
 accelerate config
 ```
+This will launch an interactive setup wizard. For most single-GPU setups (like Google Colab or a standard desktop), you can follow the answers below.
 
-**Example configuration for single GPU:**
-```
-In which compute environment are you running? → This machine
-Which type of machine are you using? → No distributed training
-Do you want to run your training on CPU only? → NO
-Do you wish to optimize your script with torch dynamo? → NO
-Do you want to use DeepSpeed? → NO
-What GPU(s) should be used for training? → all (or 0)
-Do you wish to use mixed precision? → bf16
-```
+<details>
+<summary><strong>Click to see the `accelerate config` example dialogue</strong></summary>
 
-### Step 5: Hugging Face Authentication
-The Stable Diffusion 3 models require authentication:
+```text
+In which compute environment are you running?
+[0] This machine
+[1] AWS (Amazon SageMaker)
+-> 0 (This machine)
 
-1. Visit [Stable Diffusion 3.5 Medium](https://huggingface.co/stabilityai/stable-diffusion-3.5-medium)
-2. Accept the license terms
-3. Get your access token from [HF Settings](https://huggingface.co/settings/tokens)
-4. Login via terminal:
-```bash
-huggingface-cli login
+Which type of machine are you using?
+[0] No distributed training
+[1] multi-CPU
+[2] multi-GPU
+...
+-> 0 (No distributed training, if you are on a single GPU)
+
+Do you want to run your training on CPU only? [yes/NO]:
+-> NO
+
+Do you wish to optimize your script with torch dynamo? [yes/NO]:
+-> NO
+
+Do you want to use DeepSpeed? [yes/NO]:
+-> NO
+
+What GPU(s) (by id) should be used for training on this machine? (e.g. '0,1,2,3', 'all') [all]:
+-> all (or 0)
+
+Would you like to enable numa efficiency? [yes/NO]:
+-> NO (This is safe for most systems)
+
+Do you wish to use mixed precision?
+[0] no
+[1] fp16
+[2] bf16
+...
+-> 2 (bf16, to match our project's config)
+
 ```
+After answering, `accelerate` will save a configuration file, and you won't see warnings when you run `accelerate launch`.
+</details>
+
+### Step 5: Hugging Face Authentication (Crucial Step)
+
+**⚠️ IMPORTANT:** The Stable Diffusion 3.5 models require authentication. To download them, you must first agree to the license terms on the model's Hugging Face page and then log in.
+
+1. Visit [Stable Diffusion 3.5 Medium model page](https://huggingface.co/stabilityai/stable-diffusion-3.5-medium) or [Stable Diffusion 3.5 Large model page](https://huggingface.co/stabilityai/stable-diffusion-3.5-large)
+2.  Accept the license terms
+3.  Get your access token from [HF Settings](https://huggingface.co/settings/tokens)
+4.  Login via terminal:
+    ```bash
+    huggingface-cli login
+    ```
+    
+### Step 6: Prepare Your Dataset
+
+The training script requires a specific dataset format. For a detailed guide on creating a high-quality dataset from scratch, please refer to the **[Text-to-Image Dataset Preparation Toolkit](https://github.com/gokhaneraslan/text_to_image_dataset_toolkit).
+
+For a quick test, ensure your dataset directory contains an `images/` subdirectory and a `metadata.jsonl` file..**
 
 ## 📁 Dataset Preparation
 
@@ -172,8 +215,6 @@ tensorboard --logdir output_dir/logs
 ```
 
 ### Training Time Estimates
-- **RTX 3060 12GB**: ~2-4 hours for 20 epochs with 100 images
-- **RTX 4090**: ~30-60 minutes for 20 epochs with 100 images
 - **Google Colab**: ~1-2 hours (varies with availability)
 
 ## 🎨 Generating Images
@@ -317,9 +358,6 @@ We welcome contributions! Areas where help is appreciated:
 - Documentation improvements
 - Bug fixes and optimizations
 
-## 📄 License
-
-This project is licensed under the MIT License. See `LICENSE` file for details.
 
 ## 🙏 Acknowledgments
 
