@@ -2,7 +2,7 @@ import torch
 import argparse
 from pathlib import Path
 from diffusers import StableDiffusion3Pipeline, AutoencoderKL, SD3Transformer2DModel
-from transformers import CLIPTextModelWithProjection, T5EncoderModel
+from transformers import CLIPTextModelWithProjection, T5EncoderModel, BitsAndBytesConfig
 from peft import PeftModel
 import logging
 
@@ -22,56 +22,76 @@ def generate_image(args):
         logger.warning("CUDA is not available. Running on CPU, which will be very slow.")
         args.device = "cpu"
     
-    device = torch.device(args.device)
-    dtype = torch.bfloat16 if device.type == "cuda" and torch.cuda.is_bf16_supported() else torch.float16
-    
-    logger.info(f"Using device: {device}, dtype: {dtype}")
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    dtype = torch.bfloat16 if torch.cuda.is_available() and torch.cuda.is_bf16_supported() else torch.float16
+
+    print(f"Using device: {device}, dtype: {dtype}")
+
+    # Quantization config
+    quantization_config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_compute_dtype=torch.bfloat16,
+        bnb_4bit_quant_type="nf4",
+        bnb_4bit_use_double_quant=True
+    )
     
     try:
         # --- 1. Load Base Models ---
-        logger.info(f"Loading base model: {args.base_model_id}")
+        print(f"Loading base model: {args.base_model_id}")
         
         text_encoder_l_base = CLIPTextModelWithProjection.from_pretrained(
-            args.base_model_id, 
-            subfolder="text_encoder", 
-            torch_dtype=dtype
+            args.base_model_id,
+            subfolder="text_encoder",
+            torch_dtype=dtype,
+            low_cpu_mem_usage=True,
+            quantization_config=quantization_config,
+            device_map="auto",
         )
         
         text_encoder_g_base = CLIPTextModelWithProjection.from_pretrained(
             args.base_model_id,
-            subfolder="text_encoder_2", 
-            torch_dtype=dtype
+            subfolder="text_encoder_2",
+            torch_dtype=dtype,
+            low_cpu_mem_usage=True,
+            quantization_config=quantization_config,
+            device_map="auto",
         )
         
         text_encoder_t5_base = T5EncoderModel.from_pretrained(
             args.base_model_id, 
-            subfolder="text_encoder_3", 
-            torch_dtype=dtype
+            subfolder="text_encoder_3",
+            torch_dtype=dtype,
+            low_cpu_mem_usage=True,
+            quantization_config=quantization_config,
+            device_map="auto",
         )
         
         transformer_base = SD3Transformer2DModel.from_pretrained(
             args.base_model_id, 
-            subfolder="transformer", 
-            torch_dtype=dtype
+            subfolder="transformer",
+            torch_dtype=dtype,
+            low_cpu_mem_usage=True,
+            quantization_config=quantization_config,
+            device_map="auto",
         )
 
         # --- 2. Load and Merge LoRA Adapters ---
         lora_path = Path(args.lora_checkpoint_dir)
-        logger.info(f"Loading LoRA adapters from: {lora_path}")
+        print(f"Loading LoRA adapters from: {lora_path}")
         
         transformer = PeftModel.from_pretrained(transformer_base, str(lora_path / "transformer_lora")).merge_and_unload()
         text_encoder_l = PeftModel.from_pretrained(text_encoder_l_base, str(lora_path / "text_encoder_clip_l_lora")).merge_and_unload()
         text_encoder_g = PeftModel.from_pretrained(text_encoder_g_base, str(lora_path / "text_encoder_clip_g_lora")).merge_and_unload()
         text_encoder_t5 = PeftModel.from_pretrained(text_encoder_t5_base, str(lora_path / "text_encoder_t5_lora")).merge_and_unload()
         
-        logger.info("LoRA adapters merged successfully.")
+        print("LoRA adapters merged successfully.")
 
         # --- 3. Build Pipeline ---
         # Load VAE with float32 for precision, it's not a large model
         vae = AutoencoderKL.from_pretrained(
             args.base_model_id,
             subfolder="vae", 
-            torch_dtype=torch.float32
+            torch_dtype=torch.float32,
         )
 
         pipe = StableDiffusion3Pipeline.from_pretrained(
@@ -80,22 +100,22 @@ def generate_image(args):
             text_encoder=text_encoder_l,
             text_encoder_2=text_encoder_g,
             text_encoder_3=text_encoder_t5,
-            vae=vae.to(dtype=dtype),
+            vae=vae,
             torch_dtype=dtype
         )
         pipe.to(device)
-        logger.info("Inference pipeline created and moved to device.")
+        print("Inference pipeline created and moved to device.")
 
         # --- 4. Generate Image ---
         seed = args.seed if args.seed is not None else torch.randint(0, 1_000_000, (1,)).item()
         generator = torch.Generator(device=device).manual_seed(seed)
         
-        logger.info(f"\n--- Generating Image ---")
-        logger.info(f"Prompt: {args.prompt}")
-        logger.info(f"Negative Prompt: {args.negative_prompt}")
-        logger.info(f"Settings: Steps={args.steps}, Guidance={args.guidance_scale}, Seed={seed}, Resolution={args.resolution}")
+        print(f"\n--- Generating Image ---")
+        print(f"Prompt: {args.prompt}")
+        print(f"Negative Prompt: {args.negative_prompt}")
+        print(f"Settings: Steps={args.steps}, Guidance={args.guidance_scale}, Seed={seed}, Resolution={args.resolution}")
         
-        with torch.autocast(device_type=device.type, dtype=dtype, enabled=device.type=="cuda"):
+        with torch.autocast(device_type=device, dtype=dtype, enabled=(device=="cuda")):
             image = pipe(
                 prompt=args.prompt,
                 negative_prompt=args.negative_prompt,
@@ -111,7 +131,7 @@ def generate_image(args):
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
         image.save(output_path)
-        logger.info(f"Image saved successfully to: {output_path}")
+        print(f"Image saved successfully to: {output_path}")
 
     except Exception as e:
         logger.error(f"An error occurred during inference: {e}", exc_info=True)
@@ -123,7 +143,7 @@ def generate_image(args):
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
             
-        logger.info("Inference finished.")
+        print("Inference finished.")
 
 if __name__ == "__main__":
     
