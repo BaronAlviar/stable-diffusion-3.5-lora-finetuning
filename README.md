@@ -259,10 +259,10 @@ model:
   use_quantization: true          # Enable 4-bit quantization
 ```
 
-### 2. "Model is Gated" Error
+### 2. "Model is Gated" or HTTP 401 Unauthorized Error
 **Symptoms**: Cannot download model files
 **Solutions**:
-1. Accept license at [HuggingFace model page](https://huggingface.co/stabilityai/stable-diffusion-3.5-medium)
+1. Accept license at [Stable Diffusion 3.5 Medium model page](https://huggingface.co/stabilityai/stable-diffusion-3.5-medium) or [Stable Diffusion 3.5 Large model page](https://huggingface.co/stabilityai/stable-diffusion-3.5-large)
 2. Run `huggingface-cli login` with valid token
 3. Ensure token has read permissions
 
