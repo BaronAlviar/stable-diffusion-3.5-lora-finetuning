@@ -15,7 +15,7 @@ paths:
   
 # --- Training Hyperparameters ---
 training:
-  num_epochs: 20
+  num_epochs: 120
   batch_size: 1
   gradient_accumulation_steps: 4
   max_grad_norm: 1.0
