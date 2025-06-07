@@ -372,7 +372,7 @@ We welcome contributions! Areas where help is appreciated:
 - [Understanding Diffusion Models](https://lilianweng.github.io/posts/2021-07-11-diffusion-models/)
 - [LoRA Paper](https://arxiv.org/abs/2106.09685)
 - [Stable Diffusion 3 Paper](https://arxiv.org/abs/2403.03206)
-- [Stable Diffusion 3 Paper pdf](https://arxiv.org/pdf/2403.03206).
+- [Stable Diffusion 3 Paper pdf](https://arxiv.org/pdf/2403.03206)
 
 ### Tools & Utilities
 - [Dataset Preparation Toolkit](https://github.com/gokhaneraslan/text_to_image_dataset_toolkit)
